@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f7f9fc;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      color: #333333;
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 14px;
+      color: #555555;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #dddddd;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #007bff;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #message {
+      margin-top: 5px;
+      font-size: 20px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-align: center;
+      color: #28a745;
+    }
+    #teacherList {
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      max-height: 150px;
+      max-width: 80%;
+      overflow-y: auto;
+      width: calc(100% - 22px);
+      display: none;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    .teacherItem {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f1f1;
+    }
+    .teacherItem:hover {
+      background-color: #f9f9f9;
+    }
+    /* Memperbesar ukuran icon check-circle */
+    .fas.fa-check-circle {
+      color: #28a745; /* Warna hijau */
+      font-size: 100px; /* Ukuran icon besar */
+      margin-right: 8px;
+      margin-bottom: 50;
+      margin-top: 10;
+      vertical-align: middle;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Form Kehadiran Kajian</h2>
+    <label for="teacherName">Nama Guru:</label>
+    <input type="text" id="teacherName" placeholder="Ketik Nama Guru">
+    <div id="teacherList"></div>
+    
+    <button id="BtnSubmit" onclick="submitForm()">Submit</button>
+    
+    <div id="message"></div>
+  </div>
+
+  <script>
+    let allTeachers = [];
+
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxiPrH5r61VbLXqPFJDOavzR191nYjHl3W0mCCoehZ_asSg2HeNqN2dbCDzkgIykwJ-/exec'; // Ganti dengan Script ID kamu
+
+    function loadTeacherNames() {
+      fetch(`${API_URL}?action=getTeacherNames`)
+        .then(response => response.json())
+        .then(data => {
+          allTeachers = data.names;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    document.getElementById('teacherName').addEventListener('input', function() {
+      let input = this.value.toLowerCase();
+      let teacherList = document.getElementById('teacherList');
+      
+      teacherList.innerHTML = '';
+      teacherList.style.display = 'none';
+
+      if (input.length > 0) {
+        let filteredTeachers = allTeachers.filter(function(name) {
+          return name.toLowerCase().includes(input);
+        });
+
+        if (filteredTeachers.length > 0) {
+          teacherList.style.display = 'block';
+          filteredTeachers.forEach(function(name) {
+            let div = document.createElement('div');
+            div.textContent = name;
+            div.classList.add('teacherItem');
+            div.addEventListener('click', function() {
+              document.getElementById('teacherName').value = name;
+              teacherList.style.display = 'none';
+            });
+            teacherList.appendChild(div);
+          });
+        }
+      }
+    });
+
+    function submitForm() {
+      let teacherName = document.getElementById('teacherName').value;
+
+      if (teacherName) {
+        fetch(`${API_URL}?action=submitAttendance&teacherName=${encodeURIComponent(teacherName)}`)
+          .then(response => response.text())
+          .then(response => {
+            document.getElementById('message').innerHTML = 
+              '<i class="fas fa-check-circle"></i> <br>' + response;
+
+            // Sembunyikan form
+            document.querySelector('h2').style.display = 'none';
+            document.querySelector('label[for="teacherName"]').style.display = 'none';
+            document.getElementById('teacherName').style.display = 'none';
+            document.getElementById('teacherList').style.display = 'none';
+            document.getElementById('BtnSubmit').style.display = 'none';
+
+            // Bersihkan input field
+            document.getElementById('teacherName').value = '';
+          })
+          .catch(error => console.error('Error:', error));
+      } else {
+        document.getElementById('message').innerText = 'Mohon masukkan nama guru.';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTeacherNames);
+  </script>
+</body>
+</html>
